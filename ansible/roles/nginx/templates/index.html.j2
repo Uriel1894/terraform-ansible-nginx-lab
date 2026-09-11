@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ page_title }}</title>
+</head>
+<body>
+    <h1>Bienvenue sur {{ ansible_hostname }}</h1>
+    <p>Serveur configuré via Ansible.</p>
+    <p>OS : {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+    <p>Date de déploiement : {{ ansible_date_time.date }}</p>
+</body>
+</html>

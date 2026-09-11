@@ -1,0 +1,6 @@
+---
+nginx_package: nginx
+nginx_service: nginx
+nginx_web_user: www-data
+nginx_web_group: www-data
+nginx_doc_root: /var/www/html
