@@ -9,14 +9,11 @@ A minimal, working IaC pipeline: Terraform provisions an EC2 instance on AWS, An
 3. The Ansible role is **OS-portable**: it detects the target's OS family (`ansible_os_family`) and loads the matching package/path variables, so the same role runs unmodified on Debian/Ubuntu or RedHat/Amazon Linux.
 
 ## Structure
-terraform/ Provisions the AWS infrastructure
-main.tf
-variables.tf
-outputs.tf
-ansible/ Configures the provisioned instance
-nginx.yml
-inventory.ini.example
-roles/nginx/
+
+- `terraform/` — provisions the AWS infrastructure
+  - `main.tf`, `variables.tf`, `outputs.tf`
+- `ansible/` — configures the provisioned instance
+  - `nginx.yml`, `inventory.ini.example`, `roles/nginx/`
 
 ## Usage
 
