@@ -45,3 +45,17 @@ terraform destroy
 - **Dedicated IAM user**, not root, with a scoped policy (`AmazonEC2FullAccess`).
 - **Idempotence is deliberate, not automatic.** An earlier version of this project used `timestamp()` in a resource, which broke Terraform idempotence (forced replace on every plan). Fixed by removing non-deterministic values from resource definitions.
 - **`.terraform.lock.hcl` is committed** (not ignored) to pin provider versions for reproducibility.
+
+## Remote state
+
+Terraform state is stored in an S3 bucket instead of a local file, with versioning enabled, public access blocked, encryption at rest, and native state locking (`use_lockfile`, available since Terraform 1.10, no DynamoDB table needed).
+
+The bucket is created once, outside Terraform, since it must exist before Terraform can store its state in it:
+
+    aws s3api create-bucket --bucket <your-unique-bucket-name> --region eu-west-3 --create-bucket-configuration LocationConstraint=eu-west-3
+    aws s3api put-bucket-versioning --bucket <your-unique-bucket-name> --versioning-configuration Status=Enabled
+    aws s3api put-public-access-block --bucket <your-unique-bucket-name> --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+Then set the bucket name in the `backend "s3"` block of `terraform/main.tf` (backend blocks cannot use variables).
+
+Why it matters: a local state file is a single point of failure and cannot be shared safely. A remote backend gives one source of truth, state history through versioning, and protection against two concurrent applies.

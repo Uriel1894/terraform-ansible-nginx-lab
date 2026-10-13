@@ -1,4 +1,12 @@
 terraform {
+  backend "s3" {
+    bucket       = "uriel1894-tfstate-lab"
+    key          = "terraform-ansible-nginx-lab/terraform.tfstate"
+    region       = "eu-west-3"
+    encrypt      = true
+    use_lockfile = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
