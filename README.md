@@ -10,10 +10,10 @@ A minimal, working IaC pipeline: Terraform provisions an EC2 instance on AWS, An
 
 ## Structure
 
-- `terraform/` — provisions the AWS infrastructure
+- `terraform/`: provisions the AWS infrastructure
   - `main.tf`, `variables.tf`, `outputs.tf`
-- `ansible/` — configures the provisioned instance
-  - `nginx.yml`, `inventory.ini.example`, `roles/nginx/`
+- `ansible/`: configures the provisioned instance
+  - `nginx.yml`, `aws_ec2.yml`, `roles/nginx/`
 
 ## Usage
 
@@ -26,13 +26,11 @@ cd terraform
 terraform init
 terraform apply
 
-# 3. Point Ansible at the new instance
-terraform output -raw public_ip
-# copy inventory.ini.example -> inventory_aws.ini and set the IP
+# 3. No IP to copy: the dynamic inventory (aws_ec2.yml) finds the instance by its tag
 
 # 4. Configure it
 cd ../ansible
-ansible-playbook -i inventory_aws.ini nginx.yml
+ansible-playbook -i aws_ec2.yml nginx.yml
 
 # 5. Tear down when done
 cd ../terraform
@@ -42,7 +40,7 @@ terraform destroy
 ## Design choices worth noting
 
 - **No hardcoded credentials anywhere.** The AWS provider reads credentials from the local AWS CLI configuration (`aws configure`), never from code.
-- **Dedicated IAM user**, not root, with a scoped policy (`AmazonEC2FullAccess`).
+- **Dedicated IAM user**, not root, with managed policies scoped to the services used (`AmazonEC2FullAccess`, `AmazonS3FullAccess`).
 - **Idempotence is deliberate, not automatic.** An earlier version of this project used `timestamp()` in a resource, which broke Terraform idempotence (forced replace on every plan). Fixed by removing non-deterministic values from resource definitions.
 - **`.terraform.lock.hcl` is committed** (not ignored) to pin provider versions for reproducibility.
 
@@ -59,3 +57,12 @@ The bucket is created once, outside Terraform, since it must exist before Terraf
 Then set the bucket name in the `backend "s3"` block of `terraform/main.tf` (backend blocks cannot use variables).
 
 Why it matters: a local state file is a single point of failure and cannot be shared safely. A remote backend gives one source of truth, state history through versioning, and protection against two concurrent applies.
+
+## Dynamic inventory
+
+The `ansible/aws_ec2.yml` inventory queries AWS for running instances tagged `Name=terraform-lab`, so there is no IP to copy after each `terraform apply`. It requires the `amazon.aws` collection and `boto3`:
+
+    ansible-galaxy collection install amazon.aws
+    sudo apt install -y python3-boto3 python3-botocore
+
+Check what Ansible discovers with `ansible-inventory -i aws_ec2.yml --graph`.
